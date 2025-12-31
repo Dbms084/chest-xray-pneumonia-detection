@@ -2,6 +2,11 @@
 
 This project focuses on detecting **pneumonia from chest X-ray images** using **Convolutional Neural Networks (CNNs)**.  
 The emphasis of this work is not just achieving high accuracy, but **understanding model behavior, handling medical data carefully, and improving generalization through experimentation**.
+Multiple modeling approaches were explored and **systematically compared**, including a baseline CNN, a regularized CNN, and transfer learning with pretrained models.
+
+The goal was not only to achieve high accuracy, but also to **understand model behavior, generalization, and medical trade-offs** such as sensitivity vs specificity.
+
+---
 
 ---
 
@@ -150,23 +155,130 @@ Confusion Matrix:
 
 ---
 
+## 📌 Dataset
+
+- **Dataset**: Chest X-ray Images (Pneumonia)
+- **Classes**:
+  - NORMAL
+  - PNEUMONIA
+- **Splits**:
+  - Training set
+  - Validation set
+  - Test set (kept completely unseen until final evaluation)
+
+> The same dataset splits were reused for all models to ensure fair comparison.
 
 ---
 
-## 🚀 Next Steps
+## 🧠 Models Implemented
 
-- Add **one transfer learning model (MobileNetV2)**
-- Compare baseline CNN vs transfer learning
-- Analyze improvements in generalization
-- Add Grad-CAM visualization for interpretability
+### 1️⃣ Baseline CNN
+- Simple convolutional neural network
+- No explicit regularization
+- Observed behavior:
+  - Very high pneumonia recall
+  - Poor normal recall
+  - Strong bias toward predicting pneumonia
+
+This model served as a **reference point**.
 
 ---
 
-## 📝 Author Note
+### 2️⃣ Regularized CNN (Final Best Model ✅)
 
-This project was developed with a **learn-by-building approach**, focusing on understanding each architectural and training decision rather than copying end-to-end solutions.
+**Enhancements over baseline:**
+- Data augmentation (RandomFlip, RandomRotation, RandomZoom)
+- Batch Normalization
+- Dropout (0.5)
+
+**Why regularization was added:**
+- Reduce overfitting
+- Improve generalization
+- Balance predictions between NORMAL and PNEUMONIA
+
+**Outcome:**
+- Best balance between sensitivity and specificity
+- Highest macro F1-score among all models
+- Strong generalization on the test set
+
+👉 **This model was selected as the final model.**
 
 ---
+
+### 3️⃣ Transfer Learning – MobileNetV2
+Two approaches were evaluated:
+
+#### 🔹 Frozen Feature Extractor
+- Pretrained on ImageNet
+- Only classifier head trained
+- Stable learning but limited adaptation to medical images
+
+#### 🔹 Fine-tuned MobileNetV2
+- Top layers unfrozen
+- Very small learning rate used
+- Improved performance over frozen model
+- Still did not outperform the regularized CNN
+
+**Key Insight**:
+> Transfer learning improved stability but did not surpass a well-regularized, task-specific CNN.
+
+---
+
+### 4️⃣ Transfer Learning – DenseNet121
+- Chosen due to its popularity in medical imaging literature
+- Evaluated as a frozen feature extractor
+- Did not improve NORMAL recall
+- Performance similar to baseline CNN
+
+This experiment confirmed that **not all pretrained models generalize well to chest X-ray images**.
+
+---
+
+## 📊 Evaluation Strategy
+
+Models were evaluated using:
+
+- Test set accuracy (`model.evaluate`)
+- Confusion matrix
+- Precision, recall, and F1-score (class-wise)
+- Qualitative visualization of predictions on test images
+
+Special emphasis was placed on:
+- **Pneumonia recall** (minimizing false negatives)
+- **Normal recall** (reducing false positives)
+
+---
+
+## 🔍 Key Findings
+
+| Model | Normal Recall | Pneumonia Recall | Accuracy |
+|------|---------------|------------------|----------|
+| Baseline CNN | Low | Very High | Moderate |
+| **Regularized CNN** | **High** | **High** | **Best** |
+| MobileNetV2 (Frozen) | Moderate | Very High | Moderate |
+| MobileNetV2 (Fine-tuned) | Moderate | Very High | Good |
+| DenseNet121 (Frozen) | Low | Very High | Moderate |
+
+---
+
+## 🏆 Final Conclusion
+
+> A well-regularized, task-specific CNN outperformed transfer learning models pretrained on natural images for this medical imaging task.
+
+This highlights that:
+- Pretrained models are not always superior
+- Proper regularization and domain-specific learning are crucial in medical AI
+- Evaluation beyond accuracy is essential in healthcare applications
+
+---
+
+## 💾 Model Saving
+
+The final regularized CNN model was saved using TensorFlow’s recommended format:
+
+```python
+regularized_model.save("regularized_cnn")
+
 
 ## ⚠️ Disclaimer
 
