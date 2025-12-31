@@ -176,3 +176,158 @@ to
 > “Understanding and defending deep learning decisions”
 
 Each model change was guided by **observations, not guesses**.
+
+## Learnings after using transfer learning and fine tuning 
+---
+# 📘 Learning Notes – Chest Pneumonia Detection Project
+
+This document records my **learning journey, decisions, mistakes, and insights** while building a deep learning system to detect pneumonia from chest X-ray images.  
+The focus is on **understanding**, not just results.
+
+---
+
+## 1️⃣ Understanding the Problem (Medical Context)
+
+- Pneumonia detection is a **binary classification** problem:
+  - NORMAL
+  - PNEUMONIA
+- In medical AI:
+  - **False negatives (missing pneumonia)** are more dangerous than false positives
+  - Therefore, **recall for pneumonia** is a critical metric
+- Accuracy alone is **not sufficient** for evaluation
+
+📌 This changed how I evaluated models later.
+
+---
+
+## 2️⃣ Baseline CNN – First Attempt
+
+### What I did
+- Built a simple CNN using:
+  - Conv → Pool → Conv → Pool → Dense
+- No regularization
+- Trained and evaluated on test set
+
+### What I observed
+- Very high pneumonia recall (~0.99)
+- Very poor normal recall (~0.25)
+- Model predicted pneumonia for most images
+
+### What I learned
+- The model was **biased toward the majority / easier class**
+- High accuracy does not mean a good medical model
+- Baseline models help **reveal bias**, not solve the problem
+
+---
+
+## 3️⃣ Importance of Proper Evaluation
+
+I learned to evaluate models using:
+- Confusion matrix
+- Precision, recall, F1-score
+- Class-wise analysis
+
+Key realization:
+> Two models with similar accuracy can behave very differently in real-world usage.
+
+---
+
+## 4️⃣ Regularized CNN – Major Improvement
+
+### What I added
+- Data augmentation:
+  - RandomFlip
+  - RandomRotation
+  - RandomZoom
+- Batch Normalization
+- Dropout (0.5)
+
+### Why
+- Reduce overfitting
+- Improve generalization
+- Balance predictions between classes
+
+### What happened
+- NORMAL recall increased significantly (~0.65)
+- Pneumonia recall remained high (~0.98)
+- Best macro F1-score among all models
+
+### Key learning
+> A well-regularized, task-specific CNN can outperform more complex pretrained models.
+
+This model became the **final best model**.
+
+---
+
+## 5️⃣ Transfer Learning – MobileNetV2
+
+### Frozen Feature Extractor
+- Used pretrained ImageNet weights
+- Trained only the classifier head
+
+**Observation:**
+- Stable learning
+- Moderate improvement over baseline
+- Limited adaptation to medical images
+
+### Fine-Tuned MobileNetV2
+- Unfroze top layers
+- Used very small learning rate (1e-5)
+
+**Observation:**
+- Slight performance improvement
+- Pneumonia recall remained excellent
+- Still did not outperform regularized CNN
+
+### Key learning
+> Transfer learning improves stability, but pretrained features from natural images may not be optimal for medical imaging tasks.
+
+---
+
+## 6️⃣ Transfer Learning – DenseNet121
+
+### Why DenseNet121
+- Popular in medical imaging literature
+- Dense feature reuse
+
+### Result
+- Frozen DenseNet121 showed:
+  - Poor normal recall
+  - Similar behavior to baseline CNN
+- Did not improve specificity
+
+### Learning
+> Not all pretrained models generalize well to chest X-rays, even if they are popular in research.
+
+---
+
+## 7️⃣ Learning About Training Variance
+
+- Re-training the same model sometimes produced different results
+- Caused by:
+  - Random weight initialization
+  - Data shuffling
+  - Stochastic optimization
+
+Important realization:
+> In deep learning, we report the **best validated run**, not every run.
+
+---
+
+## 8️⃣ TensorFlow Best Practices Learned
+
+- Keep data augmentation **inside the model**
+- Do not augment validation or test data
+- Use `model.evaluate()` for final reporting
+- Always evaluate on a **separate test set**
+- Save models to avoid retraining after runtime resets
+
+---
+
+## 9️⃣ Model Saving & Reproducibility
+
+Learned to save models using:
+
+```python
+model.save("model_name")
+
